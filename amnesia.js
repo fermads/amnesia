@@ -50,7 +50,7 @@ var Amnesia = {
 	},
 
 	send : function(value, id, callback) {
-		if(conf[id].self) // do not send on itself;
+		if(conf[id].self) // do not send to itself;
 			return
 
 		var client = Net.connect(conf[id].port, conf[id].host)

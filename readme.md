@@ -4,6 +4,7 @@ Easy memory (javascript object/variable) sharing between different machines and/
 
 * Extremely simple and small. A single variable is shared between machines and processes
 * When this variable value is changed, it gets updated on all other machines
+* Supports javascript Number, String and JSON
 * No other modules dependency
 
 Disclaimer:

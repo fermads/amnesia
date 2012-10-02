@@ -14,7 +14,6 @@ setTimeout (function() {
 	mem.data = 2;	
 }, 3000)
 
-
 setTimeout (function() {
 	mem.data = 8;	
 }, 6000)

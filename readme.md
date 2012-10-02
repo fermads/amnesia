@@ -41,7 +41,6 @@ All machines should have the same conf.json with the current machine's ip and it
 		"host" : "172.22.18.16",
 		"port" : 8888
 	}
-
 ]
 ```
 

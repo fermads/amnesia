@@ -1,16 +1,19 @@
 {
-	"author": "Fernando M.A.d.S. <fermads@gmail.com>",
-	"name": "amnesia",
-	"description": "A node.js client for graphite.",
-	"version": "0.1.0",
-	"homepage": "https://github.com/fermads/Amnesia",
-	"repository": {
-		"type": "git",
-		"url": "git://github.com/fermads/Amnesia.git"
-	},
-		"main": "./amnesia",
-
-	"engines": {
-		"node": ">=0.5"
-	},
+  "name": "amnesia",
+  "version": "0.1.0",
+  "description": "Easy memory sharing (javascript variable/json) between different machines and/or process for Node.js",
+  "main": "amnesia.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fermads/Amnesia.git"
+  },
+  "keywords": [
+    "memory",
+    "sharing"
+  ],
+  "author": "Fernando MAdS <fermads@gmail.com>",
+  "license": "MIT"
 }

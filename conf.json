@@ -1,16 +1,13 @@
 [
 	{
-		"log"  : true,
 		"host" : "10.0.1.2",
 		"port" : 7777
 	},
 	{
-		"log"  : true,		
 		"host" : "10.0.1.2",
 		"port" : 8888
 	},
 	{
-		"log"  : true,		
 		"host" : "10.0.1.6",
 		"port" : 8888
 	}

@@ -8,7 +8,7 @@ Easy memory (javascript object/variable) sharing between different machines and/
 
 Disclaimer:
 
-* No garantees of concurrent writes, last one stands
+* No guarantees of concurrent writes, last one stands
 * No persistence. On restarts, it'll ask for a SYNC from all others peers and get the most updated value
 * If you're on only one machine and using node.js cluster, you'll probably be better with message passing
 * For a serious use, you'll probably need something else like Redis or Memcache

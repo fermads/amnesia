@@ -14,35 +14,10 @@ Disclaimer:
 * If you're on only one machine and using node.js cluster, you'll probably be better with message passing
 * For a serious use, you'll probably need something else like Redis or Memcache
 
-
 ## Install
 
 ```
 npm install amnesia
-```
-
-## Configuration
-
-Edit conf.json and add your ips/ports. If you'll share on the same machine with different processes, duplicate the ip with different ports
-
-All machines should have the same conf.json with the current machine's ip and its peers
-
-
-```js
-[
-	{
-		"host" : "172.22.18.15",
-		"port" : 7777
-	},
-	{
-		"host" : "172.22.18.15",
-		"port" : 8888
-	},
-	{
-		"host" : "172.22.18.16",
-		"port" : 8888
-	}
-]
 ```
 
 ## Usage
@@ -72,6 +47,30 @@ mem.on('log', function(msg) {
 When it was updated?
 ```js
 console.log(mem.updated)
+```
+
+## Configuration
+
+Edit conf.json and add your ips/ports. If you'll share on the same machine with different processes, duplicate the ip with different ports
+
+All machines should have the same conf.json with the current machine's ip and its peers
+
+
+```js
+[
+	{
+		"host" : "172.22.18.15",
+		"port" : 7777
+	},
+	{
+		"host" : "172.22.18.15",
+		"port" : 8888
+	},
+	{
+		"host" : "172.22.18.16",
+		"port" : 8888
+	}
+]
 ```
 
 ## Interactive example

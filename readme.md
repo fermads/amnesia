@@ -1,6 +1,6 @@
 # Amnesia
 
-Easy memory (javascript object/variable) sharing between different machines and/or process for Node.js
+Easy shared data (javascript object/variable) between different machines and/or process for Node.js
 
 * Extremely simple and small. A single variable is shared between machines and processes
 * When this variable value is changed, it gets updated on all other machines

@@ -1,8 +1,11 @@
+var readline = require('readline')
 var mem = require('./amnesia')
+var rl
 
 function init() {
 	bind()
-	run()
+	setup()
+	ask()
 }
 
 function bind() {
@@ -17,16 +20,18 @@ function bind() {
 	})
 }
 
-function run() {
-	var count = 0
-	var testvalues = [ 'ok', 1, false, true, null, undefined, Infinity, 
-						NaN, {a:1}, {}, [1], [], '', function(){} ]
+function setup() {
+	rl = readline.createInterface({
+	  input: process.stdin,
+	  output: process.stdout
+	})
+}
 
-	var id = setInterval(function() {
-	    if(count >= testvalues.length)
-	    	clearInterval(id)
-    	mem.data = testvalues[count++]
-	}, 2000)
+function ask() {
+	rl.question('\nEnter a string to send to all peers: ', function(answer) {
+		mem.data = answer		
+		ask()
+	})
 }
 
 init()

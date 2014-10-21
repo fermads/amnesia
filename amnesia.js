@@ -1,173 +1,205 @@
 
-var Events = require('events'),
-	Net = require('net'),
-	Os = require('os'),
-	conf = require('./conf')
+var events = require('events')
+var	net = require('net')
+var	os = require('os')
+var	conf = require('./conf')
+var mem
 
-var mem, log
+function init() {
+	if(mem === undefined) { // singleton
+		setup()
+		server()
+	}
+	return mem
+}
 
-var Amnesia = {
+function log(line, id) {
+	var who = id >= 0 ? conf[id].host +':'+ conf[id].port : ''
+	mem.emit('log', '[AMNESIA] '+ line +' '+ who)
+}
 
-	init : function() {
-		Amnesia.setup()
-		Amnesia.server()
-		return mem
-	},
+function setup() {
+	mem = new events.EventEmitter()
+	mem.updated = 0
+	mem.remote = false
 
-	log : function(line, id) {
-		var who = id >= 0 ? conf[id].host +':'+ conf[id].port : ''
-		mem.emit('log', line + who)
-	},
-
-	setup : function() {
-		mem = new Events.EventEmitter()
-		mem.updated = 0
-		mem.remote = null // last value was set remotely?
-		log = Amnesia.log
-
-		Object.defineProperty(mem, 'data', {
-			set : Amnesia.set, // overwrite default setter
-			get : function() {
-				return this.value
-			}
-		})
-	},
-
-	set : function(value) {
-		log('Value changed from '+ this.value +' to '+ value
-			+ (mem.remote ? ' remotely' : ' locally' ) )
-
-		this.value = value
-		mem.updated = Date.now()
-		mem.emit('change', mem.data, value, mem.remote)
-
-		if(!mem.remote) { // new value is set locally, send to other peers
-			for(var i = 0; i < conf.length; i++) {
-				Amnesia.send(value, i)
-			}
+	Object.defineProperty(mem, 'data', {
+		set : set, 
+		get : function() {
+			return this.value
 		}
-		mem.remote = false
-	},
+	})
+}
 
-	send : function(value, id, callback) {
-		if(conf[id].self) // do not send to itself;
-			return
+function set(value) {
+	if(value === undefined 
+		|| value == Infinity
+		|| Number.isNaN(value) 
+		|| typeof value == 'function')
+		return log('Skipping invalid value: '+ value)
 
-		var client = Net.connect(conf[id].port, conf[id].host)
+	log('Value changed from '+ this.value +' to '
+		+ value +' '+ (mem.remote ? 'remotely' : 'locally'))
 
-		client.on('data', function(data) {
-			if(callback)
-				callback(data.toString(), id)
-		})
+	mem.updated = Date.now()
+	mem.emit('change', this.value, value, mem.remote)
+	this.value = value
 
-		client.on('error', function(err) {
-			log(err + ' on ', id)
-		})
-
-		client.write(JSON.stringify(value))
-	},
-
-	sync : function() {	// on init, SYNC with other peers
-		var fresh = 0, id = null
-		for(var i = 0; i < conf.length; i++) {
-			Amnesia.send('!!SYNC', i, function(updated, i) {
-				if(updated > fresh) {
-					fresh = updated
-					id = i
-				}
-			})
+	if(mem.remote === false) { // new value was set locally, send to other peers
+		for(var id = 0; id < conf.length; id++) {
+			send(value, id)
 		}
+	}
+	else {
+		mem.remote = false	
+	}
+}
 
-		setTimeout(function() {
-			if (id !== null) // no update needed, all peers have nothing
-				Amnesia.update(id)
-		}, 1000)
-		
-		log('Requesting SYNC to all peers')
-	},
+function send(value, id, callback) {
+	if(conf[id].self) // do not send to itself
+		return
 
-	update : function(id) { // on SYNC a peer has an updated value, request it.
-		Amnesia.send('!!UPDATE', id, function(val) {
-			mem.remote = true
-			mem.data = Amnesia.parse(val)
-		})
+	if(!conf[id].client)
+		conf[id].client = connect(id)
 
-		log('Requesting UPDATE to ', id)
-	},
+	if(callback)
+		conf[id].callback = callback
 
-	server : function() {
-		var server = Net.createServer(function(socket) {
-			socket.on('data', function(value) {
-				Amnesia.router(socket, Amnesia.parse(value))
-			})
-		})
+	conf[id].client.write(JSON.stringify(value))
+}
 
-		server.on('listening', function() {
-			conf[conf.id].self = true
-			log('Listening on ', conf.id)
-			Amnesia.sync()
-		})
+function connect(id) {
+	var client = net.connect(conf[id].port, conf[id].host)
 
-		server.on('error', function(e) {
-			if(e.code == 'EADDRINUSE') {
-				conf[conf.id].self = false
-				Amnesia.listen(server)
-			}
-			else {
-				log(e.message)
-			}
-		})
+	log('Connecting to peer', id)	
 
-		Amnesia.listen(server)
-	},
+	client.on('data', function(data) {
+		if(conf[id].callback)
+			conf[id].callback(data.toString(), id)
+	})
 
-	listen : function(server) { // find the correct ip and port to bind
-		var nics = Os.networkInterfaces()
+	client.on('close', function() {
+		conf[id].client = null
+		log('Peer connection closed', id)
+	})
 
-		for (var nic in nics) { // loop on network interfaces
-			for (var family in nics[nic]) { // loop on family (ipv4 e ipv6)
-				for (var i in conf) { // loop on conf ips
-					if(conf[i].host == nics[nic][family].address 
-					&& conf[i].self === undefined) {
-						conf.id = i
-						server.listen(conf[i].port, conf[i].host)
-						return
-					}
-				}
-			}
+	client.on('error', function(error) {
+		conf[id].client = null
+		log('Peer connection error ('+ error.message +')', id)
+	})
+
+	return client
+}
+
+function sync() { // on init, SYNC with other peers
+	var fresh = 0, id = null
+	var callback = function(result, i) {
+		var updated = result.split(':')[1]
+		if(updated > fresh) {
+			fresh = updated
+			id = i
 		}
+	}
 
-		console.error('No configuration found for this machine. '
-			+ 'Edit conf.json and add this machine\'s ip/port')
+	for(var i = 0; i < conf.length; i++) {
+		send('!SYNC', i, callback)
+	}
 
-		process.exit(1)
-	},
+	setTimeout(function() { // wait 1 sec for any sync responses from all peers
+		if (id !== null && fresh > mem.updated) // no update needed, all peers have nothing
+			update(id)
+	}, 1000)
+	
+	log('Requesting SYNC to all peers')
+}
 
-	router : function(socket, value) { // route request to the server
-		if(value == '!!SYNC') {
-			log('Sending SYNC response to '+ socket.remoteAddress)
-			socket.write(mem.updated.toString())
-		}
-		else if(value == '!!UPDATE') {
-			log('Sending UPDATE response to '+ socket.remoteAddress)
-			socket.write(JSON.stringify(mem.data))
+function update(id) { // on SYNC a peer has an updated value, request it.
+	send('!UPDATE', id, function(val) {
+		mem.remote = true
+		mem.data = parse(val)
+	})
+
+	log('Requesting UPDATE to', id)
+}
+
+function server() {
+	var tcpserver = net.createServer(function(socket) {
+		var peer = socket.remoteAddress
+
+		socket.on('data', function(value) {
+			router(socket, parse(value), peer)
+		})
+
+		socket.on('error', function(error) {
+			if(error.code == 'ECONNRESET')
+		    	log('Peer disconnected '+ peer)
+		    else
+		    	log('Error ('+ error.message +') connecting to peer '+ peer)
+		})
+
+		log('Peer connected '+ peer)
+	})
+
+	tcpserver.on('listening', function() {
+		conf[conf.id].self = true
+		log('Amnesia tcp server running on ', conf.id)
+		sync()
+	})
+
+	tcpserver.on('error', function(error) {
+		if(error.code == 'EADDRINUSE') {
+			log('Port already in use. Trying another one')
+			conf[conf.id].self = false
+			listen(tcpserver)
 		}
 		else {
-			log('Received new value from '+ socket.remoteAddress)
-			mem.remote = true
-			mem.data = value
+			log('Amnesia server error '+ error.message)
 		}
-	},
+	})
 
-	parse : function(value) {
-		try {
-			return JSON.parse(value)
+	listen(tcpserver)
+}
+
+function listen(server) { // find the correct ip and port to bind
+	var nifs = JSON.stringify(os.networkInterfaces())
+	
+	for (var i in conf) { // loop over conf ips
+		if(nifs.indexOf(conf[i].host) != -1 && conf[i].self === undefined) {
+			conf.id = i
+			return server.listen(conf[i].port, conf[i].host)
 		}
-		catch(e) {
-			return value.toString()
-		}
+	}
+
+	console.error('No configuration found for this machine. '
+		+ 'Edit conf.json and add this machine\'s ip/port')
+
+	process.exit(1)
+}
+
+function router(socket, data, peer) { // route request to the server
+	if(data == '!SYNC') {
+		log('Sending SYNC response to peer '+ peer)
+		socket.write('!SYNC:'+ mem.updated)
+	}
+	else if(data == '!UPDATE') {
+		log('Sending UPDATE response to peer '+ peer)
+		socket.write(JSON.stringify(mem.data))
+	}
+	else {
+		log('Received new value from peer '+ peer)
+		mem.remote = true
+		mem.data = data
+	}
+}
+
+function parse(value) {
+	try {
+		return JSON.parse(value)
+	}
+	catch(e) {
+		return value.toString()
 	}
 }
 
 // export and init
-module.exports = Amnesia.init()
+module.exports = init()

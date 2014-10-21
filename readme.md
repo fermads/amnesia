@@ -25,7 +25,7 @@ npm install amnesia
 Use like any javascript object. The value is on the "data" property
 ```js
 mem = require ('./amnesia');
-mem.data = 1 // <-- all "mem.data" variable in all machines will have their value set to 1
+mem.data = 1 // <-- "mem.data" variable in all machines will have their value set to 1
 
 ```
 

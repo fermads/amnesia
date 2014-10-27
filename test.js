@@ -1,13 +1,15 @@
 var mem = require('./amnesia')
+mem.conf = require('./conf.json')
 
 function init() {
+	
 	bind()
 	run()
 }
 
 function bind() {
-	mem.on('change', function(oldvalue, newvalue, remoteUpdate) {
-		console.log('Value changed from '+ oldvalue +' to '+ newvalue +' '
+	mem.on('change', function(oldValue, newValue, remoteUpdate) {
+		console.log('Value changed from '+ oldValue +' to '+ newValue +' '
 			+ (remoteUpdate ? 'remotely' : 'locally') 
 			+ ' at '+ new Date(mem.updated).toISOString())
 	})

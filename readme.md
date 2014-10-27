@@ -1,6 +1,6 @@
 # Amnesia
 
-Easy memory sharing (javascript object/variable) between different machines and/or processes for Node.js
+Simple memory sharing (javascript object/variable) between different machines and/or processes for Node.js
 
 * Extremely simple and small. A single variable is shared between machines and processes
 * When this variable value is changed, it gets updated on all other machines
@@ -21,13 +21,17 @@ npm install amnesia
 
 ## Configuration
 
-Edit conf.json and add your ips/ports. If you'll share on the same machine with different processes, duplicate the ip with different ports
+Two ways to do it. 
 
-All machines should have the same conf.json with the current machine's ip and its peers
+1. Copy conf.json to your application directory and edit/add your ips/ports 
+```
+mem.conf = require('./conf')
+```
 
+2. Add it directly to your code
 
 ```js
-[
+mem.conf = [
 	{
 		"host" : "172.22.18.15",
 		"port" : 7777
@@ -43,19 +47,25 @@ All machines should have the same conf.json with the current machine's ip and it
 ]
 ```
 
+If you'll share on the same machine with different processes, duplicate the ip with different ports
+
+All machines should have the same configuration with the current machine's ip and its peers
+
+
 ## Usage
 
 Use like any javascript object. The value is on the "data" property
 ```js
-mem = require ('./amnesia');
+mem = require ('amnesia');
+mem.conf = [/* your configuration */];
 mem.data = 1 // <-- all "mem.data" variable in all machines will have their value set to 1
 
 ```
 
 Need to know when value change?
 ```js
-mem.on('change', function(oldvalue, newvalue, remoteUpdate) {
-	console.log('Value changed from '+ oldvalue +' to '+ newvalue +' '+ (remoteUpdate ? 'remotely' : 'locally') );
+mem.on('change', function(oldValue, newValue, remoteUpdate) {
+	console.log('Value changed from '+ oldValue +' to '+ newValue +' '+ (remoteUpdate ? 'remotely' : 'locally') );
 	// remoteUpdate tells you if the new value came from another machine (set remotely)
 })
 ```
@@ -76,8 +86,8 @@ console.log(mem.updated)
 On machine 1:
 ```js
 node
-> mem = require('./amnesia')
-{ updated: 0, remote: null }
+> var mem = require('amnesia')
+> mem.conf = require('./conf')
 > mem.data = { jsontest : 123 }
 { jsontest: 123 }
 >
@@ -86,10 +96,10 @@ node
 Then, on machine 2:
 ```js
 node
-> mem = require('./amnesia') // <-- a SYNC happens here
-{ updated: 0, remote: null }
-> mem.data
-{ jsontest: 123 } // <-- then value for mem.data is already set
+> var mem = require('amnesia') 
+> mem.conf = require('./conf') // <-- after adding config, a SYNC happens
+> mem.data // <-- then value for mem.data is already set
+{ jsontest: 123 }
 >
 ```
 

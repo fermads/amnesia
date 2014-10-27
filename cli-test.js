@@ -1,16 +1,18 @@
 var readline = require('readline')
 var mem = require('./amnesia')
 var rl
+mem.conf = require('./conf')
 
 function init() {
+
 	bind()
 	setup()
 	ask()
 }
 
 function bind() {
-	mem.on('change', function(oldvalue, newvalue, remoteUpdate) {
-		console.log('Value changed from '+ oldvalue +' to '+ newvalue +' '
+	mem.on('change', function(oldValue, newValue, remoteUpdate) {
+		console.log('Value changed from '+ oldValue +' to '+ newValue +' '
 			+ (remoteUpdate ? 'remotely' : 'locally') 
 			+ ' at '+ new Date(mem.updated).toISOString())
 	})

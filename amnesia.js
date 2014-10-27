@@ -1,20 +1,22 @@
-
 var events = require('events')
 var	net = require('net')
 var	os = require('os')
-var	conf = require('./conf')
-var mem
+
+var mem, store = {}
+
+var cmd = {
+	sync : '\u0016',
+	update : '\u0006'
+}
 
 function init() {
-	if(mem === undefined) { // singleton
+	if(!mem)
 		setup()
-		server()
-	}
 	return mem
 }
 
 function log(line, id) {
-	var who = id >= 0 ? conf[id].host +':'+ conf[id].port : ''
+	var who = id >= 0 ? mem.conf[id].host +':'+ mem.conf[id].port : ''
 	mem.emit('log', '[AMNESIA] '+ line +' '+ who)
 }
 
@@ -23,30 +25,42 @@ function setup() {
 	mem.updated = 0
 	mem.remote = false
 
-	Object.defineProperty(mem, 'data', {
-		set : set, 
+	Object.defineProperty(mem, 'conf', {
+		set : conf,
 		get : function() {
-			return this.value
+			return store.conf
+		}
+	})
+
+	Object.defineProperty(mem, 'data', {
+		set : data, 
+		get : function() {
+			return store.data
 		}
 	})
 }
 
-function set(value) {
+function conf(value) {
+	store.conf = value
+	server()
+}
+
+function data(value) {
 	if(value === undefined 
 		|| value == Infinity
 		|| Number.isNaN(value) 
 		|| typeof value == 'function')
 		return log('Skipping invalid value: '+ value)
 
-	log('Value changed from '+ this.value +' to '
+	log('Value changed from '+ store.data +' to '
 		+ value +' '+ (mem.remote ? 'remotely' : 'locally'))
 
 	mem.updated = Date.now()
-	mem.emit('change', this.value, value, mem.remote)
-	this.value = value
+	mem.emit('change', store.data, value, mem.remote)
+	store.data = value
 
 	if(mem.remote === false) { // new value was set locally, send to other peers
-		for(var id = 0; id < conf.length; id++) {
+		for(var id = 0; id < mem.conf.length; id++) {
 			send(value, id)
 		}
 	}
@@ -56,35 +70,37 @@ function set(value) {
 }
 
 function send(value, id, callback) {
-	if(conf[id].self) // do not send to itself
+	var cid = mem.conf[id]
+	if(cid.self) // do not send to itself
 		return
 
-	if(!conf[id].client)
-		conf[id].client = connect(id)
+	if(!cid.client)
+		cid.client = connect(id)
 
 	if(callback)
-		conf[id].callback = callback
+		cid.callback = callback
 
-	conf[id].client.write(JSON.stringify(value))
+	cid.client.write(JSON.stringify(value))
 }
 
 function connect(id) {
-	var client = net.connect(conf[id].port, conf[id].host)
+	var cid = mem.conf[id]
+	var client = net.connect(cid.port, cid.host)
 
 	log('Connecting to peer', id)	
 
 	client.on('data', function(data) {
-		if(conf[id].callback)
-			conf[id].callback(data.toString(), id)
+		if(cid.callback)
+			cid.callback(data.toString(), id)
 	})
 
 	client.on('close', function() {
-		conf[id].client = null
+		cid.client = null
 		log('Peer connection closed', id)
 	})
 
 	client.on('error', function(error) {
-		conf[id].client = null
+		cid.client = null
 		log('Peer connection error ('+ error.message +')', id)
 	})
 
@@ -101,8 +117,8 @@ function sync() { // on init, SYNC with other peers
 		}
 	}
 
-	for(var i = 0; i < conf.length; i++) {
-		send('!SYNC', i, callback)
+	for(var i = 0; i < mem.conf.length; i++) {
+		send(cmd.sync, i, callback)
 	}
 
 	setTimeout(function() { // wait 1 sec for any sync responses from all peers
@@ -114,7 +130,7 @@ function sync() { // on init, SYNC with other peers
 }
 
 function update(id) { // on SYNC a peer has an updated value, request it.
-	send('!UPDATE', id, function(val) {
+	send(cmd.update, id, function(val) {
 		mem.remote = true
 		mem.data = parse(val)
 	})
@@ -141,15 +157,15 @@ function server() {
 	})
 
 	tcpserver.on('listening', function() {
-		conf[conf.id].self = true
-		log('Amnesia tcp server running on ', conf.id)
+		mem.conf[mem.conf.id].self = true
+		log('Amnesia tcp server running on ', mem.conf.id)
 		sync()
 	})
 
 	tcpserver.on('error', function(error) {
 		if(error.code == 'EADDRINUSE') {
 			log('Port already in use. Trying another one')
-			conf[conf.id].self = false
+			mem.conf[mem.conf.id].self = false
 			listen(tcpserver)
 		}
 		else {
@@ -163,10 +179,10 @@ function server() {
 function listen(server) { // find the correct ip and port to bind
 	var nifs = JSON.stringify(os.networkInterfaces())
 	
-	for (var i in conf) { // loop over conf ips
-		if(nifs.indexOf(conf[i].host) != -1 && conf[i].self === undefined) {
-			conf.id = i
-			return server.listen(conf[i].port, conf[i].host)
+	for (var i in mem.conf) { // loop over conf ips
+		if(nifs.indexOf(mem.conf[i].host) != -1 && mem.conf[i].self === undefined) {
+			mem.conf.id = i
+			return server.listen(mem.conf[i].port, mem.conf[i].host)
 		}
 	}
 
@@ -177,11 +193,11 @@ function listen(server) { // find the correct ip and port to bind
 }
 
 function router(socket, data, peer) { // route request to the server
-	if(data == '!SYNC') {
+	if(data == cmd.sync) {
 		log('Sending SYNC response to peer '+ peer)
-		socket.write('!SYNC:'+ mem.updated)
+		socket.write(cmd.sync +':'+ mem.updated)
 	}
-	else if(data == '!UPDATE') {
+	else if(data == cmd.update) {
 		log('Sending UPDATE response to peer '+ peer)
 		socket.write(JSON.stringify(mem.data))
 	}

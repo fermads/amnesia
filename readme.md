@@ -23,12 +23,12 @@ npm install amnesia
 
 Two ways to do it. 
 
-1. Copy conf.json to your application directory and edit/add your ips/ports 
+Copy conf.json to your application directory and edit/add your ips/ports 
 ```
 mem.conf = require('./conf')
 ```
 
-2. Add it directly to your code
+OR add it directly to your code
 
 ```js
 mem.conf = [

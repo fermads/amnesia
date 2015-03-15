@@ -1,16 +1,16 @@
 {
   "name": "amnesia",
-  "version": "1.0.1",
   "description": "Easy memory sharing (javascript variable/json) between different machines and/or processes for Node.js",
+  "version": "1.0.2",
   "main": "amnesia.js",
+  "author": "Fernando MAdS <fermads@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/fermads/Amnesia.git"
+    "url": "https://github.com/fermads/amnesia.git"
   },
   "keywords": [
     "memory",
     "sharing"
   ],
-  "author": "Fernando MAdS <fermads@gmail.com>",
   "license": "MIT"
 }

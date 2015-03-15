@@ -105,7 +105,7 @@ node
 >
 ```
 
-Back, to machine 1:
+Back to machine 1:
 ```js
 > mem.data // <-- new value already on machine 1
 { jsontest: 456 }

@@ -101,7 +101,7 @@ node
 > mem.conf = require('./conf') // <-- after adding config, a SYNC happens
 > mem.data // <-- then value for mem.data is already set
 { jsontest: 123 }
-> mem.data = { jsontest: 456 } <-- set a new value
+> mem.data = { jsontest: 456 } // <-- set a new value
 >
 ```
 

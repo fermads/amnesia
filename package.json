@@ -1,7 +1,7 @@
 {
   "name": "amnesia",
   "description": "Easy memory sharing (javascript variable/json) between different machines and/or processes for Node.js",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "amnesia.js",
   "author": "Fernando MAdS <fermads@gmail.com>",
   "repository": {

@@ -5,13 +5,14 @@ Easy memory sharing between machines and/or processes for Node.js
 * Extremely simple and small. A single variable is shared between machines and processes
 * When this variable value changes, it is updated on all other machines/processes
 * Supported value types are JSON, String, Boolean and Number
-* Sharing is done using a TCP socket. It's actually copying, not strictly sharing the same memory allocation
+* Sharing is done using a TCP socket
 * No other module dependency
 
 Disclaimer:
 
 * No guarantees of concurrent writes, last one stands
 * No persistence. On restarts, it'll ask for a SYNC from all others peers and get the most updated value
+* It's actually copying data, not strictly sharing the same memory allocation
 
 ## Install
 

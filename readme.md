@@ -1,11 +1,12 @@
 # Amnesia
 
-Simple memory sharing (javascript object/variable) between different machines and/or processes for Node.js
+Easy memory sharing between machines and/or processes for Node.js
 
 * Extremely simple and small. A single variable is shared between machines and processes
-* When this variable value is changed, it gets updated on all other machines
-* Supports javascript Boolean, Number, String and JSON
-* No other modules dependency
+* When this variable value changes, it is updated on all other machines/processes
+* Supported value types are JSON, String, Boolean and Number
+* Sharing is done using a TCP socket
+* No other module dependency
 
 Disclaimer:
 
@@ -19,11 +20,40 @@ Disclaimer:
 npm install amnesia
 ```
 
+## Usage
+
+Use like any JavaScript object. The value is on the "data" property
+```js
+var mem = require ('amnesia');
+mem.conf = [/* your configuration, see example below */];
+mem.data = 1 // mem.data variable in all machines will have their value set to 1
+
+```
+
+Need to know when value change?
+```js
+mem.on('change', function(oldValue, newValue, remoteUpdate) {
+	console.log('Value changed from', oldValue, 'to', newValue,
+		(remoteUpdate ? 'remotely' : 'locally') );
+	// remoteUpdate tells you if the new value came from another machine (set remotely)
+})
+```
+
+Need to see what is happening/debug?
+```js
+mem.on('log', function(msg) {
+	console.log(msg);
+})
+```
+
+When it was last updated?
+```js
+console.log(mem.updated)
+```
+
 ## Configuration
 
-Two ways to do it.
-
-Copy conf.json to your application directory and edit/add your ips/ports
+Copy `conf.json` to your application directory and edit/add your ips/ports
 ```js
 mem.conf = require('./conf')
 ```
@@ -49,39 +79,14 @@ mem.conf = [
 
 If you'll share on the same machine with different processes, duplicate the ip with different ports
 
-All machines should have the same configuration with the current machine's ip and its peers
+All machines should have the same configuration with the current machine's ip and its peers.
 
+## How it works
+It uses the `Object.defineProperty` to add a custom setter and getter to the `data` property on the `mem` object.
+When a value is set (i.e. `mem.data = 1`) the custom setter is called.
+The custom setter sets the value to the local variable then write its value to the TCP socket for each other peer.
+Other peers receive the new value and set them locally to their `mem.data`
 
-## Usage
-
-Use like any javascript object. The value is on the "data" property
-```js
-mem = require ('amnesia');
-mem.conf = [/* your configuration */];
-mem.data = 1 // mem.data variable in all machines will have their value set to 1
-
-```
-
-Need to know when value change?
-```js
-mem.on('change', function(oldValue, newValue, remoteUpdate) {
-	console.log('Value changed from', oldValue, 'to', newValue,
-		(remoteUpdate ? 'remotely' : 'locally') );
-	// remoteUpdate tells you if the new value came from another machine (set remotely)
-})
-```
-
-Need to see what is happening?
-```js
-mem.on('log', function(msg) {
-	console.log(msg);
-})
-```
-
-When it was updated?
-```js
-console.log(mem.updated)
-```
 
 ## Interactive example
 On machine 1:
@@ -99,7 +104,7 @@ Then, on machine 2:
 node
 > var mem = require('amnesia')
 > mem.conf = require('./conf') // <-- after adding config, a SYNC happens
-> mem.data // <-- then value for mem.data is already set
+> mem.data // <-- value for mem.data is already set
 { jsontest: 123 }
 > mem.data = { jsontest: 456 } // <-- set a new value
 >

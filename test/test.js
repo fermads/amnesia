@@ -24,14 +24,15 @@ function run() {
   var testvalues = [ // test all types of values
   	'ok', 1, 0, false, true, null,
   	undefined, Infinity, NaN, {a:1},
-  	{}, [1], [], '', function(){}
+  	{}, [1], [], '', function(){},
+    new Date(), new RegExp()
   ]
 
   var id = setInterval(function() {
     if(count >= testvalues.length)
       clearInterval(id)
     mem.data = testvalues[count++]
-  }, 2000)
+  }, 1000)
 }
 
 init()

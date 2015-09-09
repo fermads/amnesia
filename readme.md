@@ -11,7 +11,7 @@ Easy memory sharing between machines and/or processes for Node.js
 Disclaimer:
 
 * No guarantees of concurrent writes, last one stands
-* No persistence. On restarts, it'll SYNC from all others peers and get the most updated value
+* No persistence. On restarts, it'll sync with other peers and get the most updated value
 * It's actually copying data, not strictly sharing the same memory allocation
 
 ## Install

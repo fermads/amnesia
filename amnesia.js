@@ -17,7 +17,7 @@ function init() {
 
 function log(line, id) {
   var who = id >= 0 ? mem.conf[id].host +':'+ mem.conf[id].port : ''
-  mem.emit('log', '[AMNESIA] '+ line +' '+ who)
+  mem.emit('log', '[amnesia] '+ line +' '+ who)
 }
 
 function setup() {
@@ -46,17 +46,16 @@ function conf(value) {
 }
 
 function data(value) {
-  if(value === undefined
-    || value == Infinity
-    || Number.isNaN(value)
-    || typeof value == 'function')
+  try {
+    JSON.parse(JSON.stringify(value))
+  }
+  catch(e) {
     return log('Skipping invalid value: '+ value)
-
-  log('Value changed from '+ store.data +' to '
-    + value +' '+ (mem.remote ? 'remotely' : 'locally'))
+  }
 
   mem.updated = Date.now()
-  mem.emit('change', store.data, value, mem.remote)
+  mem.emit('change', JSON.stringify(store.data),
+    JSON.stringify(value), mem.remote)
   store.data = value
 
   if(mem.remote === false) { // new value was set locally, send to other peers
@@ -87,7 +86,9 @@ function connect(id) {
   var cid = mem.conf[id]
   var client = net.connect(cid.port, cid.host)
 
-  log('Connecting to peer', id)
+  client.on('connect', function() {
+    log('Connected to peer', id)
+  })
 
   client.on('data', function(data) {
     if(cid.callback)
@@ -152,8 +153,10 @@ function server() {
       else
         log('Error ('+ error.message +') connecting to peer '+ peer)
     })
+  })
 
-    log('Peer connected '+ peer)
+  tcpserver.on('connection', function(socket) {
+    log('Peer connected '+ socket.remoteAddress)
   })
 
   tcpserver.on('listening', function() {

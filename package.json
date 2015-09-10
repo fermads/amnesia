@@ -15,8 +15,11 @@
     "test": "node test/test"
   },
   "keywords": [
+    "ipc",
     "memory",
-    "sharing"
+    "sharing",
+    "shared",
+    "share"
   ],
   "license": "MIT"
 }

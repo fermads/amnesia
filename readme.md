@@ -2,7 +2,7 @@
 
 Easy memory sharing between machines and/or processes for Node.js
 
-* Extremely simple and small. A single variable is shared between machines and processes
+* Extremely simple and small. A single variable (property) is shared between machines and processes
 * When this variable value changes, it is updated on all other machines/processes
 * Supported value types are JSON, String, Boolean and Number
 * Sharing is done using a TCP socket
@@ -22,7 +22,7 @@ npm install amnesia
 
 ## Usage
 
-Use like any JavaScript object. The value is on the "data" property
+Use like any JavaScript object. The shared value is on the "data" property
 ```js
 var mem = require ('amnesia');
 mem.conf = [/* your configuration, see example below */];
@@ -30,23 +30,23 @@ mem.data = 1 // mem.data variable in all machines will have their value set to 1
 
 ```
 
-Need to know when value change?
+When value changes
 ```js
 mem.on('change', function(oldValue, newValue, remoteUpdate) {
 	console.log('Value changed from', oldValue, 'to', newValue,
 		(remoteUpdate ? 'remotely' : 'locally') );
-	// remoteUpdate tells you if the new value came from another machine (set remotely)
+	// remoteUpdate shows if the new value came from another machine (set remotely)
 })
 ```
 
-Need to see what is happening/debug?
+See what is happening/debug
 ```js
 mem.on('log', function(msg) {
 	console.log(msg);
 })
 ```
 
-When it was last updated?
+When it was last updated
 ```js
 console.log(mem.updated)
 ```
@@ -82,10 +82,15 @@ If you'll share on the same machine with different processes, duplicate the ip w
 All machines should have the same configuration with the current machine's ip and its peers.
 
 ## How it works
-It uses the `Object.defineProperty` to add a custom setter and getter to the `data` property on the `mem` object.
+It uses the `Object.defineProperty` to add a custom setter and getter to the `data` property on the `mem` (amnesia) object.
+
 When a value is set (i.e. `mem.data = 1`) the custom setter is called.
+
 The custom setter sets the value to the local variable then write its value to the TCP socket for each other peer.
-Other peers receive the new value and set them locally to their `mem.data`
+
+Other peers receive the new value and set them locally to their `mem.data`.
+
+When a new process/machine starts (or restarts), it gets the most updated value from its peers (sync).
 
 
 ## Interactive example

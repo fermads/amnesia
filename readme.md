@@ -2,11 +2,11 @@
 
 Easy memory sharing between machines and/or processes for Node.js
 
-* Extremely simple and small. A single variable (property) is shared between machines and processes
+* A single variable (property) is shared between machines and/or processes
 * When this variable value changes, it is updated on all other machines/processes
 * Supported value types are JSON, String, Boolean and Number
 * Sharing is done using a TCP socket
-* No other module dependency
+* Extremely simple and small. No other module dependency
 
 Disclaimer:
 
@@ -86,11 +86,11 @@ It uses the `Object.defineProperty` to add a custom setter and getter to the `da
 
 When a value is set (i.e. `mem.data = 1`) the custom setter is called.
 
-The custom setter sets the value to the local variable then write its value to the TCP socket for each other peer.
+The custom setter sets the value to the local variable and also write its value to the TCP socket for each other peer.
 
-Other peers receive the new value and set them locally to their `mem.data`.
+Other peers receive the new value and set them locally to their `mem.data`. The 'change' event triggers.
 
-When a new process/machine starts (or restarts), it gets the most updated value from its peers (sync).
+When a new process/machine starts (or restarts), it gets the most updated value from its peers (sync request).
 
 
 ## Interactive example

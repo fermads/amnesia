@@ -24,9 +24,9 @@ npm install amnesia
 
 Use like any JavaScript object. The shared value is on the "data" property
 ```js
-var mem = require ('amnesia');
+var mem = require('amnesia');
 mem.conf = [/* your configuration, see example below */];
-mem.data = 1 // mem.data variable in all machines will have their value set to 1
+mem.data = 1; // mem.data variable in all machines will have their value set to 1
 
 ```
 
@@ -48,14 +48,14 @@ mem.on('log', function(msg) {
 
 When it was last updated
 ```js
-console.log(mem.updated)
+console.log(mem.updated);
 ```
 
 ## Configuration
 
 Copy `conf.json` to your application directory and edit/add your ips/ports
 ```js
-mem.conf = require('./conf')
+mem.conf = require('./conf');
 ```
 
 OR add it directly to your code
